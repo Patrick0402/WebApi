@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApi.Model;
 using WebApi.Repository.Employee;
@@ -17,6 +18,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public IActionResult Add([FromForm] EmployeeViewModel employeeView)
         {
             string relativePath = string.Empty;
@@ -51,6 +53,8 @@ namespace WebApi.Controllers
 
 
         [HttpGet]
+        [Authorize]
+
 
         public IActionResult Get()
         {
@@ -58,7 +62,9 @@ namespace WebApi.Controllers
             return Ok(employee);
         }
 
-                [HttpPost]
+        [HttpPost]
+        [Authorize]
+
         [Route("{id}/download")]
         public IActionResult DownloadPhoto(int id)
         {
