@@ -6,5 +6,6 @@ namespace WebApi.Repository.Employee
     {
         void Add(EmployeeModel employee);
         List<EmployeeModel> Get();
+        EmployeeModel? GetById(int id);
     }
 }

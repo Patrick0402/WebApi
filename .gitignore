@@ -1,6 +1,7 @@
 # Ignorar bin e obj dentro da pasta WebApi
 /WebApi/bin/
 /WebApi/obj/
+/WebApi/Storage/
 
 # Ignorar configurações do VSCode
 .vscode/
