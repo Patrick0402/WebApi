@@ -12,6 +12,7 @@ namespace WebApi.Controllers.v2
     [ApiController]
     [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/employee")]
+    // Versão v2 com authentication
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeInterface _employeeRepository;
@@ -71,6 +72,7 @@ namespace WebApi.Controllers.v2
 
         [HttpGet]
         [Route("{id}")]
+        [Authorize]
         public IActionResult GetById(int id)
         {
             var employee = _employeeRepository.GetById(id);
@@ -83,6 +85,7 @@ namespace WebApi.Controllers.v2
 
         [HttpGet]
         [Route("paginated")]
+        [Authorize]
         public IActionResult GetPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             if (pageNumber < 1 || pageSize < 10)
@@ -101,7 +104,6 @@ namespace WebApi.Controllers.v2
 
         [HttpPost]
         [Authorize]
-
         [Route("{id}/download")]
         public IActionResult DownloadPhoto(int id)
         {

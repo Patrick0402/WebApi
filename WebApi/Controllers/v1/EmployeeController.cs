@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApi.Domain.Model;
 using WebApi.Data.Repository.Employee;
@@ -12,6 +11,7 @@ namespace WebApi.Controllers.v1
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/employee")]
+    // Versão v1 sem authentication
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeInterface _employeeRepository;
@@ -26,7 +26,6 @@ namespace WebApi.Controllers.v1
         }
 
         [HttpPost]
-        [Authorize]
         public IActionResult Add([FromForm] EmployeeViewModel employeeView)
         {
             string relativePath = string.Empty;
@@ -60,7 +59,6 @@ namespace WebApi.Controllers.v1
 
 
         [HttpGet]
-        [Authorize]
         public IActionResult Get()
         {
             var employees = _employeeRepository.Get();
@@ -71,6 +69,7 @@ namespace WebApi.Controllers.v1
 
         [HttpGet]
         [Route("{id}")]
+
         public IActionResult GetById(int id)
         {
             var employee = _employeeRepository.GetById(id);
@@ -100,7 +99,6 @@ namespace WebApi.Controllers.v1
         }
 
         [HttpPost]
-        [Authorize]
 
         [Route("{id}/download")]
         public IActionResult DownloadPhoto(int id)

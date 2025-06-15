@@ -72,8 +72,17 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.ConfigureOptions<ConfigureSwaggerGenOptions>();
 
-//Autenticação JWT
+// Configuração do CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy",
+        policy => policy.WithOrigins("http://localhost:*", "https://localhost:*")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
+});
 
+//Autenticação JWT
 var key = Encoding.ASCII.GetBytes(WebApi.Key.Secret);
 
 builder.Services.AddAuthentication(x =>
@@ -114,6 +123,10 @@ else
 {
     app.UseExceptionHandler("/error");
 }
+
+app.UseCors("CorsPolicy");
+
+app.UseAuthorization();
 
 // Mapeia as rotas dos controllers (API endpoints)
 app.MapControllers();
