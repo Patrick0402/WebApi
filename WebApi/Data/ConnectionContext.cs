@@ -11,5 +11,6 @@ namespace WebApi.Context
         }
 
         public DbSet<EmployeeModel> Employees { get; set; }
+        public DbSet<CompanyModel> Companies { get; set; }
     }
 }

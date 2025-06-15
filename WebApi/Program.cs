@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using WebApi.Application.Mapping;
+using WebApi.Application.Swagger;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using Microsoft.Extensions.DependencyInjection; // Add this line
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +30,17 @@ builder.Services.AddControllers();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddApiVersioning().AddMvc().AddApiExplorer(setup =>
+{
+    setup.GroupNameFormat = "'v'VVV";
+    setup.SubstituteApiVersionInUrl = true;
+});
+
 builder.Services.AddSwaggerGen(c =>
 {
+    c.OperationFilter<SwaggerDefaultValues>();
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -57,6 +70,8 @@ builder.Services.AddSwaggerGen(c =>
 
 });
 
+builder.Services.ConfigureOptions<ConfigureSwaggerGenOptions>();
+
 //Autenticação JWT
 
 var key = Encoding.ASCII.GetBytes(WebApi.Key.Secret);
@@ -79,13 +94,22 @@ builder.Services.AddAuthentication(x =>
 });
 
 var app = builder.Build();
+var apiVersionDescriptionProvider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/error-development");
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        var version = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var description in version.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", $"Web Api - {description.GroupName.ToUpper()}");
+        }
+    });
 }
+
 else
 {
     app.UseExceptionHandler("/error");
