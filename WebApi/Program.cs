@@ -75,11 +75,47 @@ builder.Services.ConfigureOptions<ConfigureSwaggerGenOptions>();
 // Configuração do CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy",
-        policy => policy.AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader());
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin))
+                    return false;
+
+                try
+                {
+                    var uri = new Uri(origin);
+                    var host = uri.Host;
+                    var port = uri.Port;
+
+                    // Permitir localhost:8080
+                    if ((host == "localhost" || host == "127.0.0.1") && port == 8080)
+                        return true;
+
+                    // Permitir IPs de 192.168.1.100 até 192.168.1.110, somente na porta 8080
+                    if (host.StartsWith("192.168.1."))
+                    {
+                        if (int.TryParse(host.Split('.')[3], out int lastOctet))
+                        {
+                            if (lastOctet >= 100 && lastOctet <= 110 && port == 8080)
+                                return true;
+                        }
+                    }
+
+                    return false;
+                }
+                catch
+                {
+                    return false;
+                }
+            })
+            .AllowCredentials();
+    });
 });
+
 
 //Autenticação JWT
 var key = Encoding.ASCII.GetBytes(WebApi.Key.Secret);
