@@ -1,12 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using WebApi.Context;
-using WebApi.Repository.Employee;
+using WebApi.Data.Repository.Employee;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using WebApi.Application.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddAutoMapper(typeof(DomainToDTOMapping));
 
 // Adicionando o DbContext no container de serviços
 builder.Services.AddDbContext<ConnectionContext>(options =>
@@ -79,11 +82,14 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseExceptionHandler("/error-development");
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseExceptionHandler("/error");
+}
 
 // Mapeia as rotas dos controllers (API endpoints)
 app.MapControllers();

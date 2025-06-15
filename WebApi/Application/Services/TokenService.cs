@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
 using System.Text;
-using WebApi.Model;
+using WebApi.Domain.Model;
 
 namespace WebApi.Application.Services
 {

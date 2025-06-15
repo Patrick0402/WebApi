@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApi.Model;
-using WebApi.Repository.Employee;
-using WebApi.ViewModel;
+using WebApi.Domain.Model;
+using WebApi.Data.Repository.Employee;
+using WebApi.Application.ViewModel;
+using AutoMapper;
+using WebApi.Domain.DTOs;
 
 namespace WebApi.Controllers
 {
@@ -11,10 +13,14 @@ namespace WebApi.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeInterface _employeeRepository;
+        private readonly ILogger<EmployeeController> _logger;
+        private readonly IMapper _mapper;
 
-        public EmployeeController(IEmployeeInterface employeeRepository)
+        public EmployeeController(IEmployeeInterface employeeRepository, ILogger<EmployeeController> logger, IMapper mapper)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         [HttpPost]
@@ -35,7 +41,6 @@ namespace WebApi.Controllers
 
                 relativePath = Path.Combine("Storage", fileName);
 
-                // Cria a pasta se não existir
                 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Storage"));
 
                 using Stream stream = new FileStream(
@@ -54,12 +59,42 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Authorize]
-
-
         public IActionResult Get()
         {
-            var employee = _employeeRepository.Get();
-            return Ok(employee);
+            var employees = _employeeRepository.Get();
+            var employeeDTOs = _mapper.Map<List<EmployeeDTO>>(employees);
+            return Ok(employeeDTOs);
+        }
+
+
+        [HttpGet]
+        [Route("{id}")]
+        public IActionResult GetById(int id)
+        {
+            var employee = _employeeRepository.GetById(id);
+            if (employee == null)
+                return NotFound("Employee not found");
+
+            var employeeDTO = _mapper.Map<EmployeeDTO>(employee);
+            return Ok(employeeDTO);
+        }
+
+        [HttpGet]
+        [Route("paginated")]
+        public IActionResult GetPaginated([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            if (pageNumber < 1 || pageSize < 10)
+            {
+                pageNumber = 1;
+                pageSize = 10;
+            }
+
+            var employees = _employeeRepository.GetPaginated(pageNumber, pageSize);
+            var employeeDTOs = _mapper.Map<List<EmployeeDTO>>(employees);
+
+            _logger.LogInformation($"Paginated request: Page {pageNumber}, Size {pageSize}, Total Results: {employeeDTOs.Count}");
+
+            return Ok(employeeDTOs);
         }
 
         [HttpPost]
@@ -82,5 +117,6 @@ namespace WebApi.Controllers
 
             return File(dataBytes, "image/png");
         }
+
     }
 }

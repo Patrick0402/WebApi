@@ -1,7 +1,7 @@
 using WebApi.Context;
-using WebApi.Model;
+using WebApi.Domain.Model;
 
-namespace WebApi.Repository.Employee
+namespace WebApi.Data.Repository.Employee
 {
     public class EmployeeRepository : IEmployeeInterface
     {
@@ -14,7 +14,6 @@ namespace WebApi.Repository.Employee
 
         public void Add(EmployeeModel employee)
         {
-            
             _context.Employees.Add(employee);
             _context.SaveChanges();
         }
@@ -27,6 +26,15 @@ namespace WebApi.Repository.Employee
         public EmployeeModel? GetById(int id)
         {
             return _context.Employees.Find(id);
+        }
+
+        public List<EmployeeModel> GetPaginated(int pageNumber, int pageSize)
+        {
+            return _context.Employees
+                .OrderBy(e => e.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
         }
     }
 }
