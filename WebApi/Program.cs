@@ -7,18 +7,27 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using WebApi.Application.Mapping;
 using WebApi.Application.Swagger;
-using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
-using Microsoft.Extensions.DependencyInjection; // Add this line
+using WebApi.Infrastructure.Extensions; // ou o caminho que você salvou
+
+
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
 
 builder.Services.AddAutoMapper(typeof(DomainToDTOMapping));
 
-// Adicionando o DbContext no container de serviços
+string dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? configuration["Database:Host"] ?? "localhost";
+string dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? configuration["Database:Port"] ?? "5432";
+string dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? configuration["Database:Name"] ?? "WebApi";
+string dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? configuration["Database:User"] ?? "postgres";
+string dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? configuration["Database:Password"] ?? "123";
+
+string connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};";
+
 builder.Services.AddDbContext<ConnectionContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(connectionString);
 });
 
 
@@ -75,47 +84,23 @@ builder.Services.ConfigureOptions<ConfigureSwaggerGenOptions>();
 // Configuração do CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy", policy =>
+    options.AddPolicy("DevelopmentCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:8080")  // Frontend Vue rodando localmente
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+
+    options.AddPolicy("ProductionCors", policy =>
     {
         policy
+            .WithOrigins("http://localhost:8080")  // Substituir pelo domínio do frontend em produção
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .SetIsOriginAllowed(origin =>
-            {
-                if (string.IsNullOrEmpty(origin))
-                    return false;
-
-                try
-                {
-                    var uri = new Uri(origin);
-                    var host = uri.Host;
-                    var port = uri.Port;
-
-                    // Permitir localhost:8080
-                    if ((host == "localhost" || host == "127.0.0.1") && port == 8080)
-                        return true;
-
-                    // Permitir IPs de 192.168.1.100 até 192.168.1.110, somente na porta 8080
-                    if (host.StartsWith("192.168.1."))
-                    {
-                        if (int.TryParse(host.Split('.')[3], out int lastOctet))
-                        {
-                            if (lastOctet >= 100 && lastOctet <= 110 && port == 8080)
-                                return true;
-                        }
-                    }
-
-                    return false;
-                }
-                catch
-                {
-                    return false;
-                }
-            })
             .AllowCredentials();
     });
 });
-
 
 //Autenticação JWT
 var key = Encoding.ASCII.GetBytes(WebApi.Key.Secret);
@@ -136,9 +121,6 @@ builder.Services.AddAuthentication(x =>
         ValidateAudience = false
     };
 });
-
-builder.WebHost.UseUrls("http://0.0.0.0:5241");
-
 
 var app = builder.Build();
 var apiVersionDescriptionProvider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
@@ -162,7 +144,16 @@ else
     app.UseExceptionHandler("/error");
 }
 
-app.UseCors("CorsPolicy");
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("DevelopmentCors");
+    app.ApplyMigrations();
+}
+else
+{
+    app.UseCors("ProductionCors");
+}
 
 app.UseAuthorization();
 

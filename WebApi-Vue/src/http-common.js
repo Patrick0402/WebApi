@@ -1,7 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
+
+const apiBaseUrl =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:5241"
+    : process.env.VUE_APP_API_BASE_URL;
 
 const createAxios = axios.create({
-    baseURL: 'http://192.168.1.104:5241'
-}); 
+  baseURL: apiBaseUrl,
+});
 
 export default createAxios;
